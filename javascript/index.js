@@ -36,6 +36,29 @@
     [12,13,14,15],
   ]));
 
+
+  const gfMul = (d1, d2) => {
+    const xTimes = (d) => {
+      if ((d & 0b10000000) != 0) {
+        return ((d & 0b01111111) << 1) ^ 0b00011011;
+      } else {
+        return (d & 0b01111111) << 1;
+      }
+    };
+
+    let carry = d1;
+    let result = 0;
+    for (let i = 0; i < 8; i++) {
+      if ((d2 & 1) != 0) {
+        result = result ^ carry;
+      }
+      carry = xTimes(carry)
+      d2 = d2 >> 1;
+    }
+    return result;
+  };
+  console.log(gfMul(0x57, 0x13));
+
   const mixColumns = () => {
 
   }
