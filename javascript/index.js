@@ -57,6 +57,16 @@
     return result;
   }
 
+  const invShiftRows = (s) => {
+    const result = [[], [], [], [],];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        result[r][c] = s[r][(c - r) % 4];
+      }
+    }
+    return result;
+  }
+
   console.log(shiftRows([
     [0,1,2,3,],
     [4,5,6,7,],
