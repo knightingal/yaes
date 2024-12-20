@@ -116,10 +116,10 @@
 
     const rotWord = (w) => {
       return [
-        sBox[w[1]],
-        sBox[w[2]],
-        sBox[w[3]],
-        sBox[w[0]],
+        w[1],
+        w[2],
+        w[3],
+        w[0],
       ]
     }
 
