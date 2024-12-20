@@ -137,18 +137,26 @@
 
     const w = [];
     let i = 0;
-    while (i <= Nk) {
+    while (i <= Nk - 1) {
       w[i] = [key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3],]
+      console.log(`${i}: ${printWord(w[i])}`)
       i++;
     }
     while (i <= 4 * Nr + 3) {
       let temp = w[i - 1];
+      console.log(`${i} temp: ${printWord(temp)}`)
       if (i % Nk == 0) {
-        temp = addWord(subWord(rotWord(temp)), Rcon[i / Nk]); 
+        temp = rotWord(temp);
+        console.log(`${i} temp after rot: ${printWord(temp)}`)
+        temp = subWord(temp);
+        console.log(`${i} temp after sub: ${printWord(temp)}`)
+        console.log(`${i} rcon: ${printWord(Rcon[i / Nk])}`)
+        temp = addWord(temp, Rcon[i / Nk]); 
       } else if (Nk > 6 && i % Nk == 4) {
         temp = subWord(temp);
       }
       w[i] = addWord(w[i - Nk], temp);
+      console.log(`${i}: ${printWord(w[i])}`)
       i++;
     }
     return w;
