@@ -188,6 +188,41 @@
     [8,9,10,11],
     [12,13,14,15],
   ]));
+
+  const cipher = (input, w) => {
+    let state = input;
+    console.log("=========");
+    console.log(printState(state));
+    let round = 0;
+    state = addRoundKey(state, w, round);
+    console.log(`=========rount ${round + 1}`);
+    console.log(printState(state));
+    for (round = 1; round <= Nr - 1; round++) {
+      state = subBytes(state);
+      state = shiftRows(state)
+      state = mixColumns(state)
+      state = addRoundKey(state, w, round);
+      console.log(`=========rount ${round + 1}`);
+      console.log(printState(state));
+    }
+    state = subBytes(state)
+    state = shiftRows(state)
+    state = addRoundKey(state, w, Nr);
+    console.log(`=========output`);
+    console.log(printState(state));
+    return state;
+  }
+  cipher([
+    [0x32, 0x88, 0x31, 0xe0],
+    [0x43, 0x5a, 0x31, 0x37],
+    [0xf6, 0x30, 0x98, 0x07],
+    [0xa8, 0x8d, 0xa2, 0x34],
+  ], keyExpansion([
+    0x2b, 0x7e, 0x15, 0x16,
+    0x28, 0xae, 0xd2, 0xa6,
+    0xab, 0xf7, 0x15, 0x88,
+    0x09, 0xcf, 0x4f, 0x3c,
+  ]))
   console.log("end");
 
 })();
