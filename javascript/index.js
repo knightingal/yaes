@@ -261,7 +261,38 @@
     console.log(printState(state));
     return state;
   }
-  cipher([
+
+  const invCipher = (input, w) => {
+    let state = input;
+    console.log("=========");
+    console.log(printState(state));
+    let round = Nr;
+    state = addRoundKey(state, w, round);
+    console.log(`=========rount ${round}`);
+    console.log(printState(state));
+    for (round = Nr - 1; round >= 1; round--) {
+      state = invShiftRows(state);
+      console.log(`=========rount ${round}, after invshift`);
+      console.log(printState(state));
+      state = invSubBytes(state)
+      console.log(`=========rount ${round}, after invsubbyte`);
+      console.log(printState(state));
+      state = addRoundKey(state, w, round)
+      console.log(`=========rount ${round}, after addRoundkey`);
+      console.log(printState(state));
+      state = invMixColumns(state);
+      console.log(`=========rount ${round}`);
+      console.log(printState(state));
+    }
+    state = invShiftRows(state)
+    state = invSubBytes(state)
+    state = addRoundKey(state, w, 0);
+    console.log(`=========output`);
+    console.log(printState(state));
+    return state;
+  };
+
+  let output = cipher([
     [0x32, 0x88, 0x31, 0xe0],
     [0x43, 0x5a, 0x31, 0x37],
     [0xf6, 0x30, 0x98, 0x07],
