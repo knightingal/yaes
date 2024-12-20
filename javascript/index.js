@@ -96,6 +96,18 @@
     [0x1b, 0, 0, 0],
     [0x36, 0, 0, 0],
   ]
+
+  const printWord = (w) => {
+    let output = "";
+    for (let c = 0; c < 4; c++) {
+      if (w[c] <= 0xf) {
+        output += "0";
+      }
+      output += w[c].toString(16) + " ";
+    }
+      
+    return output;
+  }
   const keyExpansion = (key) => {
     const addWord = (w1, w2) => {
       return [
