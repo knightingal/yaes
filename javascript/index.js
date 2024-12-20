@@ -260,7 +260,7 @@
     console.log(`=========output`);
     console.log(printState(state));
     return state;
-  }
+  };
 
   const invCipher = (input, w) => {
     let state = input;
@@ -292,23 +292,58 @@
     return state;
   };
 
-  let output = cipher([
-    [0x32, 0x88, 0x31, 0xe0],
-    [0x43, 0x5a, 0x31, 0x37],
-    [0xf6, 0x30, 0x98, 0x07],
-    [0xa8, 0x8d, 0xa2, 0x34],
-  ], keyExpansion([
+  const stateToArray = (s) => {
+    let result = [];
+    for (let c = 0; c < 4; c++) {
+      for (let r = 0; r < 4; r++) {
+        result.push(s[r][c]);
+      }
+    }
+    return result;
+  }
+
+  const arrayToState = (a) => {
+    let result = [[], [], [], []];
+    for (let c = 0; c < 4; c++) {
+      for (let r = 0; r < 4; r++) {
+        result[r][c] = a[r + 4 * c];
+      }
+    }
+    return result;
+  }
+
+  const printArray = (a) => {
+    let result = "";
+    for (let i = 0; i < 16; i++) {
+      if (a[i] <= 0xf) {
+        result += "0";
+      }
+      result += a[i].toString(16) + " ";
+    }
+    return result;
+  }
+
+  let output = cipher(arrayToState([
+    0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34,
+  //   [[0x32, 0x88, 0x31, 0xe0],
+  //   [0x43, 0x5a, 0x31, 0x37],
+  //   [0xf6, 0x30, 0x98, 0x07],
+  //   [0xa8, 0x8d, 0xa2, 0x34],]
+  ]), keyExpansion([
     0x2b, 0x7e, 0x15, 0x16,
     0x28, 0xae, 0xd2, 0xa6,
     0xab, 0xf7, 0x15, 0x88,
     0x09, 0xcf, 0x4f, 0x3c,
-  ]))
+  ]));
+
+  console.log(printArray(stateToArray(output)));
   let source = invCipher(output, keyExpansion([
     0x2b, 0x7e, 0x15, 0x16,
     0x28, 0xae, 0xd2, 0xa6,
     0xab, 0xf7, 0x15, 0x88,
     0x09, 0xcf, 0x4f, 0x3c,
-  ]))
+  ]));
+  console.log(printArray(stateToArray(source)));
   console.log("end");
 
 })();
