@@ -30,6 +30,16 @@
     return result;
   }
 
+  const invSubBytes = (s) => {
+    const result = [[], [], [], [],];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        result[r][c] = invSBox[s[r][c]]
+      }
+    }
+    return result;
+  }
+
   console.log(subBytes([
     [0x53,0,0,0],
     [0,0,0,0],
