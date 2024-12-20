@@ -173,6 +173,9 @@
     let output = "";
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
+        if (s[r][c] <= 0xf) {
+          output += "0";
+        }
         output += s[r][c].toString(16) + " ";
       }
       output += "\n";
