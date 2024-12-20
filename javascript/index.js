@@ -141,6 +141,24 @@
     }
     return w;
   }
+
+  const printState = (s) => {
+    
+    let output = "";
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        output += s[r][c].toString(16) + " ";
+      }
+      output += "\n";
+    }
+    return output;
+  };
+  console.log(printState([
+    [0,1,2,3,],
+    [4,5,6,7,],
+    [8,9,10,11],
+    [12,13,14,15],
+  ]));
   console.log("end");
 
 })();
