@@ -108,6 +108,17 @@
     return result;
   }
 
+  const invMixColumns = (s) => {
+    const result = [[], [], [], [],];
+    for (let c = 0; c < 4; c++) {
+      result[0][c] = gfMul(s[0][c], 0x0e) ^ gfMul(s[1][c], 0x0b) ^ gfMul(s[2][c], 0x0d) ^ gfMul(s[3][c], 0x09);
+      result[1][c] = gfMul(s[0][c], 0x09) ^ gfMul(s[1][c], 0x0e) ^ gfMul(s[2][c], 0x0b) ^ gfMul(s[3][c], 0x0d);
+      result[2][c] = gfMul(s[0][c], 0x0d) ^ gfMul(s[1][c], 0x09) ^ gfMul(s[2][c], 0x0e) ^ gfMul(s[3][c], 0x0b);
+      result[3][c] = gfMul(s[0][c], 0x0b) ^ gfMul(s[1][c], 0x0d) ^ gfMul(s[2][c], 0x09) ^ gfMul(s[3][c], 0x0e);
+    }
+    return result;
+  }
+
   const addRoundKey = (s, w, round) => {
     const result = [[], [], [], [],];
     for (let c = 0; c < 4; c++) {
