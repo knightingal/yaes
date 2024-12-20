@@ -61,7 +61,7 @@
     const result = [[], [], [], [],];
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
-        result[r][c] = s[r][(c - r) % 4];
+        result[r][c] = s[r][(c - r + 4) % 4];
       }
     }
     return result;
