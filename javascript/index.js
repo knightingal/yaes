@@ -428,10 +428,7 @@
     return result;
   } 
 
-  const cfb = (password, iv, pt) => {
-    const ptArrayArray = textToArrayArray(pt);
-    const pwdArray = textToArray(password);
-    let ivArray = textToArray(iv);
+  const cfb = (pwdArray, ivArray, ptArrayArray) => {
     let en = cipher(arrayToState(ivArray), keyExpansion(pwdArray));
     console.log(printState(en));
     let enArray = stateToArray(en);
@@ -454,10 +451,7 @@
     return result;
   }
 
-  const invCfb = (password, iv, et) => {
-    const ptArrayArray = arrayToArrayArray(et);
-    const pwdArray = textToArray(password);
-    let ivArray = textToArray(iv);
+  const invCfb = (pwdArray, ivArray, ptArrayArray) => {
     let en = cipher(arrayToState(ivArray), keyExpansion(pwdArray));
     console.log(printState(en));
     let enArray = stateToArray(en);
@@ -480,9 +474,17 @@
     return result;
   }
 
-  let result = cfb("passwordpassword", "2021000120210001", "0123456789abcdef0123456789abcdef");
+  let result = cfb(
+    textToArray("passwordpassword"), 
+    textToArray("2021000120210001"), 
+    textToArrayArray("0123456789abcdef0123456789abcdef")
+  );
   console.log(printArray(result));
-  let tpResult = invCfb("passwordpassword", "2021000120210001", result);
+  let tpResult = invCfb(
+    textToArray("passwordpassword"), 
+    textToArray("2021000120210001"), 
+    arrayToArrayArray(result)
+  );
   console.log(printArray(tpResult));
   console.log(arrayToText(tpResult));
 
