@@ -336,7 +336,7 @@
 
   const printArray = (a) => {
     let result = "";
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < a.length; i++) {
       if (a[i] <= 0xf) {
         result += "0";
       }
@@ -375,5 +375,65 @@
     ])
   );
   console.log(printArray(stateToArray(source)));
+
+  const textToArray = (t) => {
+    const result = [];
+    for (let i =0; i < 16; i++) {
+      result[i] = t.charCodeAt(i);
+    }
+    return result;
+  }
+
+  const textToArrayArray = (t) => {
+    let result = [];
+    while (true) {
+      let st = t.substring(0, 16);
+      if (st.length == 0) {
+        break;
+      }
+      t = t.substring(16);
+      
+      result.push(textToArray(st));
+    }
+    return result;
+  }
+
+  const addArray = (a1, a2) => {
+    let result = [];
+    for (let i = 0; i < 16; i++) {
+      result[i] = a1[i] ^ a2[i];
+    }
+    return result;
+  } 
+
+  const cfb = (password, iv, pt) => {
+    const ptArrayArray = textToArrayArray(pt);
+    const pwdArray = textToArray(password);
+    let ivArray = textToArray(iv);
+    let en = cipher(arrayToState(ivArray), keyExpansion(pwdArray));
+    console.log(printState(en));
+    let enArray = stateToArray(en);
+    console.log(printArray(enArray));
+    let resultMatrix = [];
+    while (true) {
+      let ptArray = ptArrayArray.shift();
+      if (ptArray == undefined) {
+        break;
+      }
+      ivArray = addArray(ptArray, enArray);
+      resultMatrix.push(ivArray);
+      en = cipher(arrayToState(ivArray), keyExpansion(pwdArray));
+      enArray = stateToArray(en);
+    }
+    let result = [];
+    resultMatrix.forEach((a) => {
+      result = result.concat(a);
+    })
+    return result;
+  }
+
+  let result = cfb("passwordpassword", "2021000120210001", "0123456789abcdef0123456789abcdef");
+  console.log(printArray(result));
+
   console.log("end");
 })();
