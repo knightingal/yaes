@@ -1,3 +1,6 @@
+const { readFileSync, writeFileSync, } = require('node:fs');
+const { Buffer, } = require('node:buffer');
+const {iv, password, path} = require('./key');
 (() => {
   console.log("index");
   const sBox = [
@@ -262,25 +265,25 @@
 
   const cipher = (input, w) => {
     let state = input;
-    console.log("=========");
-    console.log(printState(state));
+    // console.log("=========");
+    // console.log(printState(state));
     let round = 0;
     state = addRoundKey(state, w, round);
-    console.log(`=========rount ${round + 1}`);
-    console.log(printState(state));
+    // console.log(`=========rount ${round + 1}`);
+    // console.log(printState(state));
     for (round = 1; round <= Nr - 1; round++) {
       state = subBytes(state);
       state = shiftRows(state);
       state = mixColumns(state);
       state = addRoundKey(state, w, round);
-      console.log(`=========rount ${round + 1}`);
-      console.log(printState(state));
+      // console.log(`=========rount ${round + 1}`);
+      // console.log(printState(state));
     }
     state = subBytes(state);
     state = shiftRows(state);
     state = addRoundKey(state, w, Nr);
-    console.log(`=========output`);
-    console.log(printState(state));
+    // console.log(`=========output`);
+    // console.log(printState(state));
     return state;
   };
 
@@ -409,10 +412,10 @@
   const arrayToArrayArray = (t) => {
     let result = [];
     while (true) {
-      let st = t.slice(0, 16);
-      if (st.length == 0) {
+      if (t.length == 0) {
         break;
       }
+      let st = t.slice(0, 16);
       t = t.slice(16);
       
       result.push(st);
@@ -452,7 +455,8 @@
   }
 
   const invCfb = (pwdArray, ivArray, ptArrayArray) => {
-    let en = cipher(arrayToState(ivArray), keyExpansion(pwdArray));
+    const expansionKey = keyExpansion(pwdArray);
+    let en = cipher(arrayToState(ivArray), expansionKey);
     console.log(printState(en));
     let enArray = stateToArray(en);
     console.log(printArray(enArray));
@@ -464,7 +468,7 @@
       }
       ivArray = addArray(ptArray, enArray);
       resultMatrix.push(ivArray);
-      en = cipher(arrayToState(ptArray), keyExpansion(pwdArray));
+      en = cipher(arrayToState(ptArray), expansionKey);
       enArray = stateToArray(en);
     }
     let result = [];
@@ -488,6 +492,14 @@
   console.log(printArray(tpResult));
   console.log(arrayToText(tpResult));
 
-
+  const fileBuff = readFileSync(path);
+  let depArrayArray = arrayToArrayArray(fileBuff.subarray());
+  let ouput = invCfb(
+    textToArray(password), 
+    textToArray(iv), 
+    depArrayArray
+  )
+  writeFileSync("./outp.jpg", Buffer.from(ouput));
+  
   console.log("end");
 })();
