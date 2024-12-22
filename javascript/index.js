@@ -1,8 +1,8 @@
 // TODO: 1. exchange the columen and row of state matrix
 //       2. use int instead of byte array
-const { readFileSync, writeFileSync, } = require('node:fs');
-const { Buffer, } = require('node:buffer');
-const {iv, password, path} = require('./key');
+const { readFileSync, writeFileSync } = require("node:fs");
+const { Buffer } = require("node:buffer");
+const { iv, password, path } = require("./key");
 (() => {
   console.log("index");
   const sBox = [
@@ -421,19 +421,19 @@ const {iv, password, path} = require('./key');
 
   const textToArray = (t) => {
     const result = [];
-    for (let i =0; i < t.length; i++) {
+    for (let i = 0; i < t.length; i++) {
       result[i] = t.charCodeAt(i);
     }
     return result;
-  }
+  };
 
   const arrayToText = (t) => {
     let result = "";
-    for (let i =0; i < t.length; i++) {
+    for (let i = 0; i < t.length; i++) {
       result += String.fromCharCode(t[i]);
     }
     return result;
-  }
+  };
 
   const textToArrayArray = (t) => {
     let result = [];
@@ -443,11 +443,11 @@ const {iv, password, path} = require('./key');
         break;
       }
       t = t.substring(16);
-      
+
       result.push(textToArray(st));
     }
     return result;
-  }
+  };
 
   const arrayToArrayArray = (t) => {
     let result = [];
@@ -457,11 +457,11 @@ const {iv, password, path} = require('./key');
       }
       let st = t.slice(0, 16);
       t = t.slice(16);
-      
+
       result.push(st);
     }
     return result;
-  }
+  };
 
   const addArray = (a1, a2) => {
     let result = [];
@@ -469,7 +469,7 @@ const {iv, password, path} = require('./key');
       result[i] = a1[i] ^ a2[i];
     }
     return result;
-  } 
+  };
 
   const cfb = (pwdArray, ivArray, ptArrayArray) => {
     let en = cipher(arrayToState(ivArray), keyExpansion(pwdArray));
@@ -490,9 +490,9 @@ const {iv, password, path} = require('./key');
     let result = [];
     resultMatrix.forEach((a) => {
       result = result.concat(a);
-    })
+    });
     return result;
-  }
+  };
 
   const invCfb = (pwdArray, ivArray, ptArrayArray) => {
     const expansionKey = keyExpansion(pwdArray);
@@ -514,19 +514,19 @@ const {iv, password, path} = require('./key');
     let result = [];
     resultMatrix.forEach((a) => {
       result = result.concat(a);
-    })
+    });
     return result;
-  }
+  };
 
   let result = cfb(
-    textToArray("passwordpassword"), 
-    textToArray("2021000120210001"), 
+    textToArray("passwordpassword"),
+    textToArray("2021000120210001"),
     textToArrayArray("0123456789abcdef0123456789abcdef")
   );
   console.log(printArray(result));
   let tpResult = invCfb(
-    textToArray("passwordpassword"), 
-    textToArray("2021000120210001"), 
+    textToArray("passwordpassword"),
+    textToArray("2021000120210001"),
     arrayToArrayArray(result)
   );
   console.log(printArray(tpResult));
@@ -534,12 +534,8 @@ const {iv, password, path} = require('./key');
 
   const fileBuff = readFileSync(path);
   let depArrayArray = arrayToArrayArray(fileBuff.subarray());
-  let ouput = invCfb(
-    textToArray(password), 
-    textToArray(iv), 
-    depArrayArray
-  )
+  let ouput = invCfb(textToArray(password), textToArray(iv), depArrayArray);
   writeFileSync("./outp.jpg", Buffer.from(ouput));
-  
+
   console.log("end");
 })();
