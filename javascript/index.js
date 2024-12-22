@@ -1,3 +1,5 @@
+// TODO: 1. exchange the columen and row of state matrix
+//       2. use int instead of byte array
 const { readFileSync, writeFileSync, } = require('node:fs');
 const { Buffer, } = require('node:buffer');
 const {iv, password, path} = require('./key');
