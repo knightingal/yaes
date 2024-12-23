@@ -557,5 +557,9 @@ const { iv, password, path } = require("./key");
   let ouput = invCfb(textToArray(password), textToArray(iv), depArrayArray);
   writeFileSync("./outp.jpg", Buffer.from(ouput));
 
+  console.log(toHex(32));
+  console.log(toHex(32, 32));
+  console.log(toHex(32, 32, true));
+
   console.log("end");
 })();
