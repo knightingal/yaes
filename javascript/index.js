@@ -194,10 +194,10 @@ const { iv, password, path } = require("./key");
   const mixColumns = (s) => {
     const result = [[], [], [], []];
     for (let c = 0; c < 4; c++) {
-      result[0][c] = gfMul(s[0][c], 2) ^ gfMul(s[1][c], 3) ^ s[2][c] ^ s[3][c];
-      result[1][c] = s[0][c] ^ gfMul(s[1][c], 2) ^ gfMul(s[2][c], 3) ^ s[3][c];
-      result[2][c] = s[0][c] ^ s[1][c] ^ gfMul(2, s[2][c]) ^ gfMul(3, s[3][c]);
-      result[3][c] = gfMul(s[0][c], 3) ^ s[1][c] ^ s[2][c] ^ gfMul(2, s[3][c]);
+      result[0][c] = gfMulBy2Map[s[0][c]] ^ gfMulBy3Map[s[1][c]] ^ s[2][c] ^ s[3][c];
+      result[1][c] = s[0][c] ^ gfMulBy2Map[s[1][c]] ^ gfMulBy3Map[s[2][c]] ^ s[3][c];
+      result[2][c] = s[0][c] ^ s[1][c] ^ gfMulBy2Map[s[2][c]] ^ gfMulBy3Map[s[3][c]];
+      result[3][c] = gfMulBy3Map[s[0][c]] ^ s[1][c] ^ s[2][c] ^ gfMulBy2Map[s[3][c]];
     }
     return result;
   };
