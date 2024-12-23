@@ -42,6 +42,26 @@ const { iv, password, path } = require("./key");
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d,
   ];
 
+  const hexMap = [
+    "0", "1", "2", "3", "4", "5", "6", "7", 
+    "8", "9", "a", "b", "c", "d", "e", "f",
+  ];
+
+  const toHex = (n, length = 8, addHeader = false) => {
+    // length may be 8, 16, 32
+    let result = [];
+    for (let i = 0; i < length / 4; i++) {
+      if (n == 0) {
+        result.unshift("0");
+      } else {
+        result.unshift(hexMap[n & 0xf]);
+        n = n >> 4;
+      }
+    }
+    return (addHeader ? "0x": "") + result.join(""); 
+  }
+
+
   const subBytes = (s) => {
     const result = [[], [], [], []];
     for (let r = 0; r < 4; r++) {
