@@ -542,11 +542,15 @@ const { iv, password, path } = require("./key");
       en = cipher(arrayToState(ptArray), expansionKey);
       enArray = stateToArray(en);
     }
-    let result = [];
-    resultMatrix.forEach((a) => {
-      result = result.concat(a);
-    });
-    return result;
+    // let result = [];
+    // invCfb take 5652
+    // resultMatrix.forEach((a) => {
+    //   result = result.concat(a);
+    // });
+    // return result;
+
+    // invCfb take 148
+    return resultMatrix;
   };
 
   let result = cfb(
@@ -565,8 +569,13 @@ const { iv, password, path } = require("./key");
 
   const fileBuff = readFileSync(path);
   let depArrayArray = arrayToArrayArray(fileBuff.subarray());
-  let ouput = invCfb(textToArray(password), textToArray(iv), depArrayArray);
-  writeFileSync("./outp.jpg", Buffer.from(ouput));
+  let time1 = new Date();
+  let output1 = invCfb(textToArray(password), textToArray(iv), depArrayArray);
+  let time2 = new Date();
+  console.log(`invCfb take ${time2.getTime() - time1.getTime()}`)
+  output1.forEach(line => {
+    writeFileSync("./outp.jpg", Buffer.from(line), {flag:"a"});
+  });
 
   console.log(toHex(32));
   console.log(toHex(32, 32));
