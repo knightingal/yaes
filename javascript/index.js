@@ -478,12 +478,12 @@ const { sBox, invSBox, toHex, gfMulBy2Map, gfMulBy3Map, gfMulBy1Map,} = require(
   console.log(toHex(32, 32));
   console.log(toHex(32, 32, true));
 
-  console.log(mixColumns([
+  console.log(mixColumns(subBytes([
     [ 0x00, 0x04, 0x08, 0x0c, ],
     [ 0x01, 0x05, 0x09, 0x0d, ],
     [ 0x02, 0x06, 0x0a, 0x0e, ],
     [ 0x03, 0x07, 0x0b, 0x0f, ],
-  ]));
+  ])));
 
   console.log("end");
 })();
