@@ -1,4 +1,4 @@
-const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4 } = require("./base");
+const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, sBox } = require("./base");
 
 (() => {
   console.log("start");
@@ -15,15 +15,37 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4 } = require
   };
 
   const mixColumns0 = (i32) => {
-    const result0 = gfMulBy2Map[(i32 >> 24) & 0xff] ^ gfMulBy3Map[(i32 >> 16) & 0xff] ^ gfMulBy1Map[(i32 >> 8) & 0xff] ^ gfMulBy1Map[i32 & 0xff];
-    const result1 = gfMulBy1Map[(i32 >> 24) & 0xff] ^ gfMulBy2Map[(i32 >> 16) & 0xff] ^ gfMulBy3Map[(i32 >> 8) & 0xff] ^ gfMulBy1Map[i32 & 0xff];
-    const result2 = gfMulBy1Map[(i32 >> 24) & 0xff] ^ gfMulBy1Map[(i32 >> 16) & 0xff] ^ gfMulBy2Map[(i32 >> 8) & 0xff] ^ gfMulBy3Map[i32 & 0xff];
-    const result3 = gfMulBy3Map[(i32 >> 24) & 0xff] ^ gfMulBy1Map[(i32 >> 16) & 0xff] ^ gfMulBy1Map[(i32 >> 8) & 0xff] ^ gfMulBy2Map[i32 & 0xff];
+    let c0 = (i32 >> 24) & 0xff;
+    let c1 = (i32 >> 16) & 0xff;
+    let c2 = (i32 >>  8) & 0xff;
+    let c3 = (i32      ) & 0xff;
+    c0 = sBox[c0];
+    c1 = sBox[c1];
+    c2 = sBox[c2];
+    c3 = sBox[c3];
+    const result0 = gfMulBy2Map[c0] ^ gfMulBy3Map[c1] ^ gfMulBy1Map[c2] ^ gfMulBy1Map[c3];
+    const result1 = gfMulBy1Map[c0] ^ gfMulBy2Map[c1] ^ gfMulBy3Map[c2] ^ gfMulBy1Map[c3];
+    const result2 = gfMulBy1Map[c0] ^ gfMulBy1Map[c1] ^ gfMulBy2Map[c2] ^ gfMulBy3Map[c3];
+    const result3 = gfMulBy3Map[c0] ^ gfMulBy1Map[c1] ^ gfMulBy1Map[c2] ^ gfMulBy2Map[c3];
     return (result0 << 24) | (result1 << 16) | (result2 << 8) | result3;
   }
 
   const mixColumns = (i32) => {
-    return ((T1[(i32 >> 24) & 0xff]) ^ (T2[(i32 >> 16) & 0xff]) ^ (T3[(i32 >> 8) & 0xff]) ^ (T4[i32 & 0xff]));
+    let c0 = (i32 >> 24) & 0xff;
+    let c1 = (i32 >> 16) & 0xff;
+    let c2 = (i32 >>  8) & 0xff;
+    let c3 = (i32      ) & 0xff;
+    c0 = sBox[c0];
+    c1 = sBox[c1];
+    c2 = sBox[c2];
+    c3 = sBox[c3];
+    let result = (
+      (T1[c0]) ^ 
+      (T2[c1]) ^ 
+      (T3[c2]) ^ 
+      (T4[c3])
+    );
+    return result;
   }
 
   console.log(toHex(mixColumns0(0x00010203), 32));
