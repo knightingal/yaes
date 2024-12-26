@@ -1,4 +1,4 @@
-const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, sBox } = require("./base");
+const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, TT3, TT4, sBox } = require("./base");
 
 (() => {
   console.log("start");
@@ -30,7 +30,7 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, sBox } = r
     return (result0 << 24) | (result1 << 16) | (result2 << 8) | result3;
   }
 
-  const mixColumns = (i32) => {
+  const mixColumns1 = (i32) => {
     let c0 = (i32 >> 24) & 0xff;
     let c1 = (i32 >> 16) & 0xff;
     let c2 = (i32 >>  8) & 0xff;
@@ -48,6 +48,19 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, sBox } = r
     return result;
   }
 
+  const mixColumns = (i32) => {
+    const c0 = (i32 >> 24) & 0xff;
+    const c1 = (i32 >> 16) & 0xff;
+    const c2 = (i32 >>  8) & 0xff;
+    const c3 = (i32      ) & 0xff;
+    return (
+      (TT1[c0]) ^ 
+      (TT2[c1]) ^ 
+      (TT3[c2]) ^ 
+      (TT4[c3])
+    );
+  }
+
   console.log(toHex(mixColumns0(0x00010203), 32));
   console.log(toHex(mixColumns0(0x04050607), 32));
   console.log(toHex(mixColumns0(0x08090a0b), 32));
@@ -55,6 +68,12 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, sBox } = r
 
   console.log("-------------");
 
+  console.log(toHex(mixColumns1(0x00010203), 32));
+  console.log(toHex(mixColumns1(0x04050607), 32));
+  console.log(toHex(mixColumns1(0x08090a0b), 32));
+  console.log(toHex(mixColumns1(0x0c0d0e0f), 32));
+
+  console.log("-------------");
   console.log(toHex(mixColumns(0x00010203), 32));
   console.log(toHex(mixColumns(0x04050607), 32));
   console.log(toHex(mixColumns(0x08090a0b), 32));
