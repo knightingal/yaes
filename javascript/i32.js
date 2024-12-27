@@ -1,3 +1,6 @@
+const { readFileSync, writeFileSync } = require("node:fs");
+const { Buffer } = require("node:buffer");
+const { iv, password, path } = require("./key");
 const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, TT3, TT4, sBox } = require("./base");
 
 (() => {
@@ -93,24 +96,18 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, 
         (key[4 * i + 1] << 16) | 
         (key[4 * i + 2] <<  8) | 
         (key[4 * i + 3]);
-      console.log(`${i}: ${printWord(w[i])}`);
       i++;
     }
     while (i <= 4 * Nr + 3) {
       let temp = w[i - 1];
-      console.log(`${i} temp: ${printWord(temp)}`);
       if (i % Nk == 0) {
         temp = rotWord(temp);
-        console.log(`${i} temp after rot: ${printWord(temp)}`);
         temp = subWord(temp);
-        console.log(`${i} temp after sub: ${printWord(temp)}`);
-        console.log(`${i} rcon: ${printWord(Rcon[i / Nk])}`);
         temp = addWord(temp, Rcon[i / Nk]);
       } else if (Nk > 6 && i % Nk == 4) {
         temp = subWord(temp);
       }
       w[i] = addWord(w[i - Nk], temp);
-      console.log(`${i}: ${printWord(w[i])}`);
       i++;
     }
     return w;
@@ -157,13 +154,44 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, 
         (sBox[(s[(i + 3) % 4]      ) & 0xff]      ) 
       ) ^ w[Nr * 4 + i];
     }
-    s = temp;
-    console.log(toHex(s[0], 32));
-    console.log(toHex(s[1], 32));
-    console.log(toHex(s[2], 32));
-    console.log(toHex(s[3], 32));
-    return s;
+    return temp;
   };
+
+  const arrayToState = (a) => {
+    const result = new Int32Array(4);
+    for (let i = 0; i < 4; i++) {
+      result[i] = 
+        a[i * 4    ] << 24 |
+        a[i * 4 + 1] << 16 |
+        a[i * 4 + 2] <<  8 |
+        a[i * 4 + 3];
+    }
+    return result;
+  };
+
+
+  const invCfb = (pwdArray, ivArray, ptByteArray) => {
+    const expansionKey = keyExpansion(pwdArray);
+    const output = new Int8Array(ptByteArray.length);
+    let en = cipher(arrayToState(ivArray), expansionKey);
+    for (let i = 0; i < ptByteArray.length; i += 16) {
+      let ptArray = ptByteArray.slice(i, i + 16);
+      let ptI32Array = byteArrayToInt32(ptArray);
+      for (let j = 0; j < 4; j++) {
+        en[j] ^= ptI32Array[j];
+      }
+
+      for (let j = 0; j < 4; j++) {
+        output[i + j * 4    ] = (en[j] >> 24) & 0xff;
+        output[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+        output[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+        output[i + j * 4 + 3] = (en[j]      ) & 0xff;
+      }
+      en = cipher(ptI32Array, expansionKey);
+    }
+    return output;
+  };
+
 
   console.log(toHex(mixColumns0(0x00010203), 32));
   console.log(toHex(mixColumns0(0x04050607), 32));
@@ -198,6 +226,21 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, 
       0x09, 0xcf, 0x4f, 0x3c,
     ])
   );
+
+  const fileBuff = readFileSync(path);
+
+  const textToArray = (t) => {
+    const result = [];
+    for (let i = 0; i < t.length; i++) {
+      result[i] = t.charCodeAt(i);
+    }
+    return result;
+  };
+  let time1 = new Date();
+  let output1 = invCfb(textToArray(password), textToArray(iv), fileBuff);
+  let time2 = new Date();
+  console.log(`invCfb take ${time2.getTime() - time1.getTime()}`)
+  writeFileSync("./outp.jpg", Buffer.from(output1));
 
   console.log("end");
 })();
