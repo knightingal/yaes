@@ -130,6 +130,41 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, 
     );
   }
 
+  const cipher = (input, w) => {
+    let s = input;
+    let round = 0;
+    for (let i = 0; i < 4; i++) {
+      s[i] ^= w[i];
+    }
+    let temp = new Int32Array(4);
+    for (round = 1; round <= Nr - 1; round++) {
+      for (let i = 0; i < 4; i++) {
+        temp[i] = 
+          TT1[(s[i          ] >> 24) & 0xff] ^
+          TT2[(s[(i + 1) % 4] >> 16) & 0xff] ^
+          TT3[(s[(i + 2) % 4] >>  8) & 0xff] ^
+          TT4[ s[(i + 3) % 4]        & 0xff] ^ 
+          w[round * 4 + i];
+      }
+      s = temp.slice();
+    }
+
+    for (let i = 0; i < 4; i++) {
+      temp[i] = (
+        (sBox[(s[ i]          >> 24) & 0xff] << 24) |
+        (sBox[(s[(i + 1) % 4] >> 16) & 0xff] << 16) |
+        (sBox[(s[(i + 2) % 4] >>  8) & 0xff] <<  8) |
+        (sBox[(s[(i + 3) % 4]      ) & 0xff]      ) 
+      ) ^ w[Nr * 4 + i];
+    }
+    s = temp;
+    console.log(toHex(s[0], 32));
+    console.log(toHex(s[1], 32));
+    console.log(toHex(s[2], 32));
+    console.log(toHex(s[3], 32));
+    return s;
+  };
+
   console.log(toHex(mixColumns0(0x00010203), 32));
   console.log(toHex(mixColumns0(0x04050607), 32));
   console.log(toHex(mixColumns0(0x08090a0b), 32));
@@ -147,6 +182,22 @@ const { gfMulBy2Map, gfMulBy3Map, gfMulBy1Map, toHex, T1, T2, T3, T4, TT1, TT2, 
   console.log(toHex(mixColumns(0x04050607), 32));
   console.log(toHex(mixColumns(0x08090a0b), 32));
   console.log(toHex(mixColumns(0x0c0d0e0f), 32));
+
+  console.log("-------------");
+  cipher(
+    [
+      0x3243f6a8, 
+      0x885a308d, 
+      0x313198a2,
+      0xe0370734,
+    ],
+    keyExpansion([
+      0x2b, 0x7e, 0x15, 0x16, 
+      0x28, 0xae, 0xd2, 0xa6, 
+      0xab, 0xf7, 0x15, 0x88,
+      0x09, 0xcf, 0x4f, 0x3c,
+    ])
+  );
 
   console.log("end");
 })();
