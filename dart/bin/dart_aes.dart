@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'key.dart' as key;
+// import 'key.dart' as key;
 
 void main() {
   var bytes1 = stringToI32List("0123456789abcdef");
@@ -23,41 +23,81 @@ void main() {
   print('------------------------');
 
   cipher(
-    [
-      0x3243f6a8, 
-      0x885a308d, 
-      0x313198a2,
-      0xe0370734,
-    ],
+    [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734],
     keyExpansion([
-      0x2b, 0x7e, 0x15, 0x16, 
-      0x28, 0xae, 0xd2, 0xa6, 
-      0xab, 0xf7, 0x15, 0x88,
-      0x09, 0xcf, 0x4f, 0x3c,
-    ])
+      0x2b,
+      0x7e,
+      0x15,
+      0x16,
+      0x28,
+      0xae,
+      0xd2,
+      0xa6,
+      0xab,
+      0xf7,
+      0x15,
+      0x88,
+      0x09,
+      0xcf,
+      0x4f,
+      0x3c,
+    ]),
   );
 
-  List<int> result = invCfb("passwordpassword".codeUnits, "2021000120210001".codeUnits, [
-    0xcc, 0xfc, 0x51, 0x50, 0x73, 0xa7, 0x9f, 0x9e, 0x48, 0x97, 0xd1, 0xe2, 0x0b, 0x58, 0x22, 0x12, 
-    0x86, 0x74, 0x22, 0xcc, 0x76, 0xa9, 0xd8, 0x1a, 0xd0, 0x27, 0x7a, 0x15, 0x94, 0x11, 0x88, 0x3d
-  ]);
+  List<int> result =
+      invCfb("passwordpassword".codeUnits, "2021000120210001".codeUnits, [
+        0xcc,
+        0xfc,
+        0x51,
+        0x50,
+        0x73,
+        0xa7,
+        0x9f,
+        0x9e,
+        0x48,
+        0x97,
+        0xd1,
+        0xe2,
+        0x0b,
+        0x58,
+        0x22,
+        0x12,
+        0x86,
+        0x74,
+        0x22,
+        0xcc,
+        0x76,
+        0xa9,
+        0xd8,
+        0x1a,
+        0xd0,
+        0x27,
+        0x7a,
+        0x15,
+        0x94,
+        0x11,
+        0x88,
+        0x3d,
+      ]);
   print(result);
 
-  var enFile = File(
-    key.path
-  );
-  Uint8List fileContent = enFile.readAsBytesSync();
+  // var enFile = File(key.path);
+  // Uint8List fileContent = enFile.readAsBytesSync();
 
-  List<int> encrypted = invCfb(key.password.codeUnits, key.iv.codeUnits, fileContent);
-  var ptFile = File("./output.jpg");
-  ptFile.writeAsBytesSync(encrypted);
+  // List<int> encrypted = invCfb(
+  //   key.password.codeUnits,
+  //   key.iv.codeUnits,
+  //   fileContent,
+  // );
+  // var ptFile = File("./output.jpg");
+  // ptFile.writeAsBytesSync(encrypted);
 
-  // print(toHex(45, hexLenght: 32, header: true));
-  print("Hello world");
+  // // print(toHex(45, hexLenght: 32, header: true));
+  // print("Hello world");
 }
 
 const List<String> HEX = [
-// dart format off
+  // dart format off
   "0", "1", "2", "3", "4", "5", "6", "7",
   "8", "9", "a", "b", "c", "d", "e", "f",
 // dart format on
@@ -92,13 +132,13 @@ List<int> stringToI32List(String str) {
   List<int> result = List.generate(str.length ~/ 4, (i) => 0);
   for (int i = 0; i < result.length; i++) {
     result[i] =
-            // dart format off
+        // dart format off
             (bytes[i * 4    ] << 24) |
             (bytes[i * 4 + 1] << 16) |
             (bytes[i * 4 + 2] <<  8) |
             (bytes[i * 4 + 3])
         // dart format on
-        ;
+    ;
   }
   return result;
 }
@@ -107,13 +147,13 @@ List<int> i8ListToI32List(List<int> i8List) {
   List<int> result = List.generate(i8List.length ~/ 4, (i) => 0);
   for (int i = 0; i < result.length; i++) {
     result[i] =
-            // dart format off
+        // dart format off
             (i8List[i * 4    ] << 24) |
             (i8List[i * 4 + 1] << 16) |
             (i8List[i * 4 + 2] <<  8) |
             (i8List[i * 4 + 3])
         // dart format on
-        ;
+    ;
   }
   return result;
 }
@@ -165,11 +205,10 @@ List<int> keyExpansion(List<int> key) {
   }
 
   int subWord(int w) {
-    return 
-        sBox[(w >>> 24) & 0xff] << 24 |
+    return sBox[(w >>> 24) & 0xff] << 24 |
         sBox[(w >>> 16) & 0xff] << 16 |
-        sBox[(w >>>  8) & 0xff] <<  8 |
-        sBox[ w        & 0xff];
+        sBox[(w >>> 8) & 0xff] << 8 |
+        sBox[w & 0xff];
   }
 
   int rotWord(int w) {
@@ -179,11 +218,11 @@ List<int> keyExpansion(List<int> key) {
   List<int> w = List<int>.generate(4 * (Nr + 1), (i) => 0);
   int i = 0;
   while (i <= Nk - 1) {
-    w[i] = 
-      (key[4 * i    ] << 24) |
-      (key[4 * i + 1] << 16) |
-      (key[4 * i + 2] <<  8) |
-      (key[4 * i + 3]);
+    w[i] =
+        (key[4 * i] << 24) |
+        (key[4 * i + 1] << 16) |
+        (key[4 * i + 2] << 8) |
+        (key[4 * i + 3]);
     i++;
   }
   while (i <= 4 * Nr + 3) {
@@ -295,25 +334,24 @@ List<int> cipher(List<int> input, List<int> w) {
 
   for (round = 1; round <= Nr - 1; round++) {
     for (int i = 0; i < 4; i++) {
-      temp[i] = 
-        TT1[(s[i          ] >>> 24) & 0xff] ^
-        TT2[(s[(i + 1) % 4] >>> 16) & 0xff] ^
-        TT3[(s[(i + 2) % 4] >>>  8) & 0xff] ^
-        TT4[ s[(i + 3) % 4]        & 0xff] ^ 
-        w[round * 4 + i];
+      temp[i] =
+          TT1[(s[i] >>> 24) & 0xff] ^
+          TT2[(s[(i + 1) % 4] >>> 16) & 0xff] ^
+          TT3[(s[(i + 2) % 4] >>> 8) & 0xff] ^
+          TT4[s[(i + 3) % 4] & 0xff] ^
+          w[round * 4 + i];
     }
     s = [...temp];
   }
 
   for (int i = 0; i < 4; i++) {
-    temp[i] = (
-        (sBox[(s[ i]          >>> 24) & 0xff] << 24) |
-        (sBox[(s[(i + 1) % 4] >>> 16) & 0xff] << 16) |
-        (sBox[(s[(i + 2) % 4] >>>  8) & 0xff] <<  8) |
-        (sBox[(s[(i + 3) % 4]      ) & 0xff]      ) 
-    ) ^ w[Nr * 4 + i];
+    temp[i] =
+        ((sBox[(s[i] >>> 24) & 0xff] << 24) |
+            (sBox[(s[(i + 1) % 4] >>> 16) & 0xff] << 16) |
+            (sBox[(s[(i + 2) % 4] >>> 8) & 0xff] << 8) |
+            (sBox[(s[(i + 3) % 4]) & 0xff])) ^
+        w[Nr * 4 + i];
   }
-
 
   return temp;
 }
@@ -330,10 +368,10 @@ List<int> invCfb(List<int> pwdArray, List<int> ivArray, List<int> ptByteArray) {
       en[j] ^= ptI32Array[j];
     }
     for (int j = 0; j < 4; j++) {
-      output[i + j * 4    ] = (en[j] >>> 24) & 0xff;
+      output[i + j * 4] = (en[j] >>> 24) & 0xff;
       output[i + j * 4 + 1] = (en[j] >>> 16) & 0xff;
-      output[i + j * 4 + 2] = (en[j] >>>  8) & 0xff;
-      output[i + j * 4 + 3] = (en[j]      ) & 0xff;
+      output[i + j * 4 + 2] = (en[j] >>> 8) & 0xff;
+      output[i + j * 4 + 3] = (en[j]) & 0xff;
     }
     en = cipher(ptI32Array, expansionKey);
   }
