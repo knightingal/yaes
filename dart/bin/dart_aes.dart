@@ -356,6 +356,29 @@ List<int> cipher(List<int> input, List<int> w) {
   return temp;
 }
 
+List<int> cfb(List<int> pwdArray, List<int> ivArray, List<int> ptByteArray) {
+  List<int> expansionKey = keyExpansion(pwdArray);
+  List<int> output = List<int>.generate(ptByteArray.length, (i) => 0);
+  List<int> en = cipher(i8ListToI32List(ivArray), expansionKey);
+
+  for (int i = 0; i < ptByteArray.length; i += 16) {
+    List<int> ptArray = ptByteArray.sublist(i, i + 16);
+    List<int> ptI32Array = i8ListToI32List(ptArray);
+    for (int j = 0; j < 4; j++) {
+      en[j] ^= ptI32Array[j];
+    }
+    for (int j = 0; j < 4; j++) {
+      output[i + j * 4] = (en[j] >>> 24) & 0xff;
+      output[i + j * 4 + 1] = (en[j] >>> 16) & 0xff;
+      output[i + j * 4 + 2] = (en[j] >>> 8) & 0xff;
+      output[i + j * 4 + 3] = (en[j]) & 0xff;
+    }
+    en = cipher(en, expansionKey);
+  }
+
+  return output;
+}
+
 List<int> invCfb(List<int> pwdArray, List<int> ivArray, List<int> ptByteArray) {
   List<int> expansionKey = keyExpansion(pwdArray);
   List<int> output = List<int>.generate(ptByteArray.length, (i) => 0);
