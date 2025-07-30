@@ -44,6 +44,12 @@ void main() {
     ]),
   );
 
+  List<int> result1 = cfb(
+    "passwordpassword".codeUnits,
+    "2021000120210001".codeUnits,
+    "0123456789abcdef0123456789abcdef".codeUnits,
+  );
+
   List<int> result =
       invCfb("passwordpassword".codeUnits, "2021000120210001".codeUnits, [
         0xcc,
