@@ -22,7 +22,7 @@ void main() {
   });
   print('------------------------');
 
-  cipher(
+  var result2 = cipher(
     [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734],
     keyExpansion([
       0x2b,
@@ -44,48 +44,18 @@ void main() {
     ]),
   );
 
-  List<int> result1 = cfb(
+  var password = "passwordpassword".codeUnits;
+  var iv = "2021000120210001".codeUnits;
+  var pt = "0123456789abcdef0123456789abcdef".codeUnits;
+  List<int> cfbResult = cfb(password, iv, pt);
+
+  List<int> invCfbResult = invCfb(
     "passwordpassword".codeUnits,
     "2021000120210001".codeUnits,
-    "0123456789abcdef0123456789abcdef".codeUnits,
+    cfbResult,
   );
-
-  List<int> result =
-      invCfb("passwordpassword".codeUnits, "2021000120210001".codeUnits, [
-        0xcc,
-        0xfc,
-        0x51,
-        0x50,
-        0x73,
-        0xa7,
-        0x9f,
-        0x9e,
-        0x48,
-        0x97,
-        0xd1,
-        0xe2,
-        0x0b,
-        0x58,
-        0x22,
-        0x12,
-        0x86,
-        0x74,
-        0x22,
-        0xcc,
-        0x76,
-        0xa9,
-        0xd8,
-        0x1a,
-        0xd0,
-        0x27,
-        0x7a,
-        0x15,
-        0x94,
-        0x11,
-        0x88,
-        0x3d,
-      ]);
-  print(result);
+  print(invCfbResult);
+  print(String.fromCharCodes(invCfbResult));
 
   // var enFile = File(key.path);
   // Uint8List fileContent = enFile.readAsBytesSync();
@@ -365,7 +335,8 @@ List<int> cipher(List<int> input, List<int> w) {
 List<int> cfb(List<int> pwdArray, List<int> ivArray, List<int> ptByteArray) {
   List<int> expansionKey = keyExpansion(pwdArray);
   List<int> output = List<int>.generate(ptByteArray.length, (i) => 0);
-  List<int> en = cipher(i8ListToI32List(ivArray), expansionKey);
+  List<int> ivState = i8ListToI32List(ivArray);
+  List<int> en = cipher(ivState, expansionKey);
 
   for (int i = 0; i < ptByteArray.length; i += 16) {
     List<int> ptArray = ptByteArray.sublist(i, i + 16);
