@@ -322,48 +322,69 @@ int write_byte_array_to_file(const char* filename, uint8_t* data, size_t data_si
   return 1;
 }
 
-void do_file() {
-  // Read the encrypted file into a byte array
-  const char* filename = "/mnt/linux1000/encrypted/20160316230333BB-31_USS_UTAH/18-013104.jpg.bin";
+void inv_cfb_file(uint8_t* pwd, uint8_t* iv, const char* input_filename, const char* output_filename) {
   size_t file_size = 0;
-  uint8_t* file_data = read_file_to_byte_array(filename, &file_size);
-  uint8_t* output_data = (uint8_t*)malloc(file_size);
-  
+  uint8_t* file_data = read_file_to_byte_array(input_filename, &file_size);
   if (!file_data) {
-    return ; // Exit if file reading failed
+    return; // Exit if file reading failed
   }
   
-  printf("File data loaded. Size: %zu bytes\n", file_size);
-  printf("First 16 bytes (hex): ");
-  for (int i = 0; i < 16 && i < file_size; i++) {
-    printf("%d ", file_data[i]);
+  uint8_t* output_data = (uint8_t*)malloc(file_size);
+  if (!output_data) {
+    free(file_data);
+    printf("Error: Could not allocate memory for output data\n");
+    return;
   }
-  printf("\n");
 
-  char* password = "****************";
-  char* iv = "2017041621251234";
+  inv_cfb(pwd, iv, file_data, output_data, file_size);
 
-  uint8_t password_bytes[16];
-  memcpy(password_bytes, password, 16);
-
-  uint8_t iv_bytes[16];
-  memcpy(iv_bytes, iv, 16);
-
-
-  inv_cfb(password_bytes, iv_bytes, file_data, output_data, file_size);
-  for (int i = 0; i < 16 && i < file_size; i++) {
-    printf("%d ", output_data[i]);
-  }
-  
-  // Write the byte array to output.jpg
-  if (write_byte_array_to_file("output.jpg", output_data, file_size)) {
-    printf("File successfully written to output.jpg\n");
+  if (write_byte_array_to_file(output_filename, output_data, file_size)) {
+    printf("File successfully written to %s\n", output_filename);
   } else {
-    printf("Failed to write file to output.jpg\n");
+    printf("Failed to write file to %s\n", output_filename);
   }
+
   free(file_data);
   free(output_data);
+}
 
+void do_file() {
+  // Use the existing inv_cfb_file function which already handles all the logic
+  const char* input_filename = "/mnt/linux1000/encrypted/20160316230333BB-31_USS_UTAH/18-013104.jpg.bin";
+  const char* output_filename = "output.jpg";
+  
+  // Initialize password and IV as uint8_t arrays directly
+  uint8_t password[16] = "";
+  uint8_t iv[16] = "2017041621251234";
+  
+  printf("Decrypting file: %s -> %s\n", input_filename, output_filename);
+  
+  // Use the existing function that handles all error checking and memory management
+  inv_cfb_file(password, iv, input_filename, output_filename);
+}
+
+// Optional: More flexible version that accepts parameters
+void do_file_with_params(const char* input_file, const char* output_file, 
+                        const char* pwd_str, const char* iv_str) {
+  if (!input_file || !output_file || !pwd_str || !iv_str) {
+    printf("Error: Invalid parameters\n");
+    return;
+  }
+  
+  // Validate string lengths
+  if (strlen(pwd_str) != 16 || strlen(iv_str) != 16) {
+    printf("Error: Password and IV must be exactly 16 characters\n");
+    return;
+  }
+  
+  uint8_t password[16];
+  uint8_t iv[16];
+  
+  memcpy(password, pwd_str, 16);
+  memcpy(iv, iv_str, 16);
+  
+  printf("Decrypting file: %s -> %s\n", input_file, output_file);
+  inv_cfb_file(password, iv, input_file, output_file);
 }
 
 int main() {
