@@ -457,6 +457,33 @@ void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, c
         memcpy(en, en_tmp, sizeof(uint32_t) * 4);
       }
     }
+
+    ssize_t bytes_written = write(output_fd, output_buffer, chunk_size);
+    if (bytes_written != chunk_size) {
+      printf("Error: Could not write complete chunk. Expected %zu bytes, wrote %zu bytes\n", 
+             chunk_size, bytes_written);
+      break;
+    }
+    
+    total_processed += chunk_size;
+    
+    // Progress indicator for large files
+    if (file_size > 1024*1024) { // Show progress for files > 1MB
+      printf("\rProgress: %.1f%% (%zu/%zu bytes)", 
+             (double)total_processed / file_size * 100, total_processed, file_size);
+      fflush(stdout);
+    }
+  }
+
+  if (file_size > 1024*1024) {
+    printf("\n"); // New line after progress
+  }
+  
+  if (bytes_read < 0) {
+    printf("Error: Failed to read from input file\n");
+  } else {
+    printf("Successfully processed %zu bytes: %s -> %s\n", 
+           total_processed, input_filename, output_filename);
   }
 
   // Clean up
@@ -721,6 +748,16 @@ int main() {
 
   uint8_t inv_cfb_bytes[32] = {0};
   inv_cfb(password_bytes, iv_bytes, cfb_bytes, inv_cfb_bytes, 32);
+
+  memcpy(iv_bytes, iv, 16);
+  memcpy(password_bytes, password, 16);
+
+  cfb_file_streaming(
+    password_bytes, 
+    iv_bytes, 
+    "pt_content.txt", 
+    "ecp_content.bin"
+  );
 
   // Clean up allocated memory
   
