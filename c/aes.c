@@ -458,10 +458,10 @@ void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, c
       }
     }
 
-    ssize_t bytes_written = write(output_fd, output_buffer, chunk_size);
-    if (bytes_written != chunk_size) {
+    ssize_t bytes_written = write(output_fd, output_buffer, BUFFER_SIZE);
+    if (bytes_written != BUFFER_SIZE) {
       printf("Error: Could not write complete chunk. Expected %zu bytes, wrote %zu bytes\n", 
-             chunk_size, bytes_written);
+             BUFFER_SIZE, bytes_written);
       break;
     }
     
