@@ -348,6 +348,124 @@ void inv_cfb_file(uint8_t* pwd, uint8_t* iv, const char* input_filename, const c
   free(output_data);
 }
 
+void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, const char* output_filename) {
+  // Define buffer size (multiple of 16 bytes for AES block alignment)
+  const size_t BUFFER_SIZE = 4096; // 4KB buffer, always multiple of 16
+  
+  // Open input file
+  int input_fd = open(input_filename, O_RDONLY);
+  if (input_fd < 0) {
+    printf("Error: Could not open input file %s\n", input_filename);
+    return;
+  }
+  
+  // Create output file
+  int output_fd = creat(output_filename, S_IRUSR|S_IWUSR);
+  if (output_fd < 0) {
+    printf("Error: Could not create output file %s\n", output_filename);
+    close(input_fd);
+    return;
+  }
+  
+  // Get file size
+  struct stat st;
+  if (fstat(input_fd, &st) < 0) {
+    printf("Error: Could not get file size\n");
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
+  size_t file_size = st.st_size;
+  printf("Processing file of size: %zu bytes\n", file_size);
+  
+  // Allocate buffers
+  uint8_t* input_buffer = (uint8_t*)malloc(BUFFER_SIZE);
+  uint8_t* output_buffer = (uint8_t*)malloc(BUFFER_SIZE);
+  
+  if (!input_buffer || !output_buffer) {
+    printf("Error: Could not allocate buffers\n");
+    free(input_buffer);
+    free(output_buffer);
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
+  // Initialize CFB state
+  uint32_t w[44] = {0};
+  key_expansion(pwd, w);
+  
+  uint32_t iv_state[4] = {0};
+  i8_list_to_i32(iv, iv_state, 4);
+  
+  uint32_t en[4] = {0};
+  cipher(iv_state, w, en);
+  
+  size_t total_processed = 0;
+  
+  // Process file in chunks
+  ssize_t bytes_read;
+  
+  while ((bytes_read = read(input_fd, input_buffer, BUFFER_SIZE)) > 0) {
+    size_t chunk_size = bytes_read;
+    
+    // Process this chunk using CFB encryption
+    for (size_t i = 0; i < chunk_size; i += 16) {
+      size_t block_size = (i + 16 <= chunk_size) ? 16 : (chunk_size - i);
+
+      if (block_size == 16) {
+        // Full 16-byte block
+        uint8_t* pt_array = input_buffer + i;
+        uint32_t pt_i32_array[4] = {0};
+        i8_list_to_i32(pt_array, pt_i32_array, 4);
+
+        for (int j = 0; j < 4; j++) {
+          en[j] ^= pt_i32_array[j];
+        }
+
+        for (int j = 0; j < 4; j++) {
+          output_buffer[i + j * 4    ] = (en[j] >> 24) & 0xff;
+          output_buffer[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+          output_buffer[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+          output_buffer[i + j * 4 + 3] = (en[j]      ) & 0xff;
+        }
+
+        uint32_t en_tmp[4] = {0};
+        cipher(en, w, en_tmp);
+        memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+      } else {
+        // Handle incomplete final block (less than 16 bytes)
+        uint8_t padded_block[16] = {0};
+        memcpy(padded_block, input_buffer + i, block_size);
+
+        uint32_t pt_i32_array[4] = {0};
+        i8_list_to_i32(padded_block, pt_i32_array, 4);
+        for (int j = 0; j < 4; j++) {
+          en[j] ^= pt_i32_array[j];
+        }
+
+        for (int j = 0; j < 4; j++) {
+          output_buffer[i + j * 4    ] = (en[j] >> 24) & 0xff;
+          output_buffer[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+          output_buffer[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+          output_buffer[i + j * 4 + 3] = (en[j]      ) & 0xff;
+        }
+
+        uint32_t en_tmp[4] = {0};
+        cipher(en, w, en_tmp);
+        memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+      }
+    }
+  }
+
+  // Clean up
+  free(input_buffer);
+  free(output_buffer);
+  close(input_fd);
+  close(output_fd);
+}
+
 // Optimized streaming version that processes file in chunks
 void inv_cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, const char* output_filename) {
   // Define buffer size (multiple of 16 bytes for AES block alignment)
