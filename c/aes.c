@@ -6,10 +6,37 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+// AES variant definitions
+typedef enum {
+    AES_128 = 0,
+    AES_256 = 1
+} aes_variant_t;
 
-int nk = 4; // Number of 32-bit words in the key (for AES-128)
-int nr = 10; // Number of rounds for AES-128
-uint32_t rcon[12] = {
+// AES parameters for different variants
+typedef struct {
+    int nk;  // Number of 32-bit words in the key
+    int nr;  // Number of rounds
+    int key_bytes;  // Key size in bytes
+    int round_keys;  // Number of round key words
+} aes_params_t;
+
+// AES parameters lookup
+static const aes_params_t aes_params[] = {
+    {4, 10, 16, 44},  // AES-128: nk=4, nr=10, 16 bytes key, 44 round key words
+    {8, 14, 32, 60}   // AES-256: nk=8, nr=14, 32 bytes key, 60 round key words
+};
+
+// Current AES variant (default to AES-128 for backward compatibility)
+static aes_variant_t current_variant = AES_128;
+
+// Convenience macros for current parameters
+#define NK() (aes_params[current_variant].nk)
+#define NR() (aes_params[current_variant].nr)
+#define KEY_BYTES() (aes_params[current_variant].key_bytes)
+#define ROUND_KEYS() (aes_params[current_variant].round_keys)
+
+// Extended rcon array for AES256 (needs 15 elements for 14 rounds)
+uint32_t rcon[16] = {
   0x00000000, 
   0x01000000, 
   0x02000000, 
@@ -20,8 +47,14 @@ uint32_t rcon[12] = {
   0x40000000, 
   0x80000000,
   0x1b000000, 
-  0x36000000
+  0x36000000,
+  0x6c000000,  // Additional constants for AES256
+  0xd8000000,
+  0xab000000,
+  0x4d000000,
+  0x9a000000
 };
+
 uint8_t sbox[256] = {
   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
   0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -41,6 +74,11 @@ uint8_t sbox[256] = {
   0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16,
 };
 
+// Convenience macros for current parameters
+#define NK() (aes_params[current_variant].nk)
+#define NR() (aes_params[current_variant].nr)
+#define KEY_BYTES() (aes_params[current_variant].key_bytes)
+#define ROUND_KEYS() (aes_params[current_variant].round_keys)
 
 uint32_t t1[] = {
   0xc66363a5, 0xf87c7c84, 0xee777799, 0xf67b7b8d, 0xfff2f20d, 0xd66b6bbd, 0xde6f6fb1, 0x91c5c554, 0x60303050, 0x02010103, 0xce6767a9, 0x562b2b7d, 0xe7fefe19, 0xb5d7d762, 0x4dababe6, 0xec76769a, 
@@ -136,8 +174,25 @@ uint32_t rot_word(uint32_t w) {
   return ((w << 8) & 0xffffff00) | ((w >> 24) & 0x000000ff);
 }
 
+// Function to set AES variant
+void set_aes_variant(aes_variant_t variant) {
+    if (variant <= AES_256) {
+        current_variant = variant;
+        printf("AES variant set to: %s\n", variant == AES_128 ? "AES-128" : "AES-256");
+    } else {
+        printf("Error: Invalid AES variant\n");
+    }
+}
+
+// Function to get current AES variant
+aes_variant_t get_aes_variant() {
+    return current_variant;
+}
 
 void key_expansion(const uint8_t *key, uint32_t *round_keys) {
+  int nk = NK();
+  int nr = NR();
+  
   int i = 0;
   while (i <= nk - 1) {
     round_keys[i] = 
@@ -173,6 +228,7 @@ void i8_list_to_i32(uint8_t* input, uint32_t* output, size_t out_len) {
 }
 
 void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
+  int nr = NR();
   uint32_t* s = input;
   int round = 0;
   for (int i = 0; i < 4; i++) {
@@ -203,7 +259,12 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
 } 
 
 void cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
-  uint32_t w[44] = {0};
+  uint32_t* w = (uint32_t*)calloc(ROUND_KEYS(), sizeof(uint32_t));
+  if (!w) {
+    printf("Error: Could not allocate memory for round keys\n");
+    return;
+  }
+  
   key_expansion(pwd, w);
 
   uint32_t iv_state[4] = {0};
@@ -233,10 +294,17 @@ void cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len
     cipher(en, w, en_tmp);
     memcpy(en, en_tmp, sizeof(uint32_t) * 4);
   }
+  
+  free(w);
 }
 
 void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
-  uint32_t w[44] = {0};
+  uint32_t* w = (uint32_t*)calloc(ROUND_KEYS(), sizeof(uint32_t));
+  if (!w) {
+    printf("Error: Could not allocate memory for round keys\n");
+    return;
+  }
+  
   key_expansion(pwd, w);
 
   uint32_t iv_state[4] = {0};
@@ -266,6 +334,8 @@ void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t
     cipher(pt_i32_array, w, en_tmp);
     memcpy(en, en_tmp, sizeof(uint32_t) * 4);
   }
+  
+  free(w);
 }
 
 uint8_t* read_file_to_byte_array(const char* filename, size_t* file_size) {
@@ -393,7 +463,16 @@ void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, c
   }
   
   // Initialize CFB state
-  uint32_t w[44] = {0};
+  uint32_t* w = (uint32_t*)calloc(ROUND_KEYS(), sizeof(uint32_t));
+  if (!w) {
+    printf("Error: Could not allocate memory for round keys\n");
+    free(input_buffer);
+    free(output_buffer);
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
   key_expansion(pwd, w);
   
   uint32_t iv_state[4] = {0};
@@ -538,7 +617,16 @@ void inv_cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filenam
   }
   
   // Initialize CFB state
-  uint32_t w[44] = {0};
+  uint32_t* w = (uint32_t*)calloc(ROUND_KEYS(), sizeof(uint32_t));
+  if (!w) {
+    printf("Error: Could not allocate memory for round keys\n");
+    free(input_buffer);
+    free(output_buffer);
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
   key_expansion(pwd, w);
   
   uint32_t iv_state[4] = {0};
@@ -634,6 +722,7 @@ void inv_cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filenam
   // Cleanup
   free(input_buffer);
   free(output_buffer);
+  free(w);
   close(input_fd);
   close(output_fd);
 }
@@ -706,7 +795,9 @@ void decrypt_file_with_mode(const char* input_file, const char* output_file,
 }
 
 int main() {
-  do_file();
+  // Test AES-128 (default)
+  printf("=== Testing AES-128 ===\n");
+  set_aes_variant(AES_128);
   
   // Your existing AES test code
   uint32_t input[4] = {
@@ -715,7 +806,11 @@ int main() {
     0x313198a2,
     0xe0370734,
   };
-  uint32_t w[44] = {0};
+  uint32_t* w = (uint32_t*)calloc(ROUND_KEYS(), sizeof(uint32_t));
+  if (!w) {
+    printf("Error: Could not allocate memory for round keys\n");
+    return 1;
+  }
   uint32_t result[4] = {0};
 
   uint8_t key[16] = {
@@ -727,6 +822,7 @@ int main() {
 
   key_expansion(key, w);
   cipher(input, w, result);
+  printf("AES-128 cipher test completed\n");
 
   uint32_t cfb_result[8] = {0};
   char* password = "passwordpassword";
@@ -748,18 +844,48 @@ int main() {
 
   uint8_t inv_cfb_bytes[32] = {0};
   inv_cfb(password_bytes, iv_bytes, cfb_bytes, inv_cfb_bytes, 32);
+  
+  printf("AES-128 CFB test completed\n");
+  free(w);
 
-  memcpy(iv_bytes, iv, 16);
-  memcpy(password_bytes, password, 16);
-
-  cfb_file_streaming(
-    password_bytes, 
-    iv_bytes, 
-    "pt_content.txt", 
-    "ecp_content.bin"
-  );
+  // Test AES-256
+  printf("\n=== Testing AES-256 ===\n");
+  set_aes_variant(AES_256);
+  
+  // Allocate new round keys for AES-256
+  w = (uint32_t*)calloc(ROUND_KEYS(), sizeof(uint32_t));
+  if (!w) {
+    printf("Error: Could not allocate memory for AES-256 round keys\n");
+    return 1;
+  }
+  
+  // AES-256 requires 32-byte key
+  uint8_t key256[32] = {
+    0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
+    0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+    0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
+    0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
+  };
+  
+  key_expansion(key256, w);
+  cipher(input, w, result);
+  printf("AES-256 cipher test completed\n");
+  
+  // Test AES-256 CFB with 32-byte password
+  char* password256 = "passwordpassword16bytesAES256!!";
+  uint8_t password256_bytes[32];
+  memcpy(password256_bytes, password256, 32);
+  
+  uint8_t cfb_bytes256[32] = {0};
+  cfb(password256_bytes, iv_bytes, input_bytes, cfb_bytes256, 32);
+  
+  uint8_t inv_cfb_bytes256[32] = {0};
+  inv_cfb(password256_bytes, iv_bytes, cfb_bytes256, inv_cfb_bytes256, 32);
+  
+  printf("AES-256 CFB test completed\n");
 
   // Clean up allocated memory
+  free(w);
   
   return 0;
 }
