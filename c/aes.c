@@ -568,6 +568,7 @@ void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, c
   // Clean up
   free(input_buffer);
   free(output_buffer);
+  free(w);
   close(input_fd);
   close(output_fd);
 }
